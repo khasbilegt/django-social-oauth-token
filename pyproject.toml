@@ -1,0 +1,87 @@
+[tool.black]
+line-length = 120
+target_version = ['py38']
+include = '\.py$'
+extend-exclude = '''
+/(
+  | migrations
+)/
+'''
+
+[tool.isort]
+profile = "black"
+skip_glob = "*/migrations/*.py"
+
+[tool.coverage.run]
+branch = true
+omit = [
+  "*/.venv/*",
+  "runtests.py",
+  "makemigrations.py"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "def __str__"
+]
+omit = [
+  "*/.venv/*",
+  "runtests.py",
+  "makemigrations.py"
+]
+show_missing = true
+skip_covered = true
+skip_empty = true
+precision = 2
+
+[tool.poetry]
+name = "django-social-oauth-token"
+version = "0.1.0"
+description = "OAuth Token generation API for handling OAuth 2.0 Authentication Code Flow based on social-auth"
+authors = ["Khasbilegt.TS <khasbilegt.ts@gmail.com>"]
+license = "MIT"
+homepage = "https://github.com/khasbilegt/django-social-oauth-token"
+repository = "https://github.com/khasbilegt/django-social-oauth-token"
+keywords = ["django", "model", "user", "email", "username", "custom"]
+readme = "README.md"
+classifiers = [
+    "Topic :: Software Development :: Build Tools",
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Framework :: Django",
+    "Framework :: Django :: 2.2",
+    "Framework :: Django :: 3.0",
+    "Framework :: Django :: 3.1",
+    "Framework :: Django :: 3.2",
+    "Framework :: Django :: 4.0"
+]
+packages = [
+    { include = "social_oauth_token"},
+]
+include = [
+    "LICENSE",
+    "README.md"
+]
+
+[tool.poetry.dependencies]
+python = "^3.6.2"
+django-oauth-toolkit = "^1.5.0"
+social-auth-app-django = "^5.0.0"
+
+[tool.poetry.dev-dependencies]
+factory-boy = "^3.2.0"
+black = "^21.9b0"
+flake8 = "^3.9.2"
+isort = "^5.9.3"
+coverage = {extras = ["toml"], version = "^5.5"}
+nox = "^2021.6.12"
+pytest = "^6.2.5"
+pytest-django = "^4.4.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
