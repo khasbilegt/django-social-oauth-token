@@ -1,6 +1,6 @@
 SECRET_KEY = "secret-key"
 
-ROOT_URLCONF = "social_oauth_token.urls"
+ROOT_URLCONF = "tests.urls"
 
 DATABASES = {
     "default": {

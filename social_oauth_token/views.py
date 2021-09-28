@@ -1,10 +1,9 @@
 from datetime import timedelta
 
 from django.contrib.auth import login
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.utils import timezone
-from django.views.generic import TemplateView, View
+from django.views.generic import View
 from oauth2_provider.models import (
     get_access_token_model,
     get_application_model,
@@ -16,11 +15,6 @@ from social_core.exceptions import AuthCanceled, MissingBackend
 from social_django.utils import load_backend, load_strategy
 
 Application = get_application_model()
-
-
-class ProfileView(LoginRequiredMixin, TemplateView):
-    def get(self, request, *args, **kwargs):
-        return HttpResponse()
 
 
 class AuthorizationView(View):

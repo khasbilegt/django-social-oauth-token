@@ -38,7 +38,7 @@ def test_invalid_client_id(client_type, grant_type, client, user):
 
     with mock.patch("social_oauth_token.views.load_backend", return_value=backend):
         response = client.post(
-            reverse("token", kwargs={"backend": "apple-id"}),
+            reverse("social_oauth_token:token", kwargs={"backend": "apple-id"}),
             data={"client_id": client_id(client_type, grant_type), "code": "apple-id"},
         )
         assert response.status_code == 403
@@ -57,7 +57,9 @@ def test_invalid_client_id(client_type, grant_type, client, user):
     ),
 )
 def test_invalid_request_body(data, client):
-    assert client.post(reverse("token", kwargs={"backend": "sdfsdfasd"}), data=data).status_code == 400
+    assert (
+        client.post(reverse("social_oauth_token:token", kwargs={"backend": "sdfsdfasd"}), data=data).status_code == 400
+    )
 
 
 @pytest.mark.django_db
@@ -67,7 +69,7 @@ def test_view(client, user):
 
     with mock.patch("social_oauth_token.views.load_backend", return_value=backend):
         res = client.post(
-            reverse("token", kwargs={"backend": "apple-id"}),
+            reverse("social_oauth_token:token", kwargs={"backend": "apple-id"}),
             data={"code": "klsdfjlskdfj", "client_id": client_id()},
         )
 
@@ -97,7 +99,7 @@ def test_view_auth_exception(client):
     with mock.patch("social_oauth_token.views.load_backend", return_value=backend):
         assert (
             client.post(
-                reverse("token", kwargs={"backend": "apple-id"}),
+                reverse("social_oauth_token:token", kwargs={"backend": "apple-id"}),
                 data={"code": "klsdfjlskdfj", "client_id": client_id()},
             ).status_code
             == 400
