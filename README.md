@@ -52,6 +52,19 @@ INSTALLED_APPS = (
 ...
 ```
 
+3. Include the `urlpatterns` in your main `urls` file.
+
+```python
+# urls.py
+
+urlpatterns = [
+  ...
+  path("social_oauth_token/", include("social_oauth_token.urls", namespace="social_oauth_token")),
+  ...
+]
+
+```
+
 ## How To Use
 
 In order to verify the **Authorization Code** sent by the user and replace it with your own **OAuth Access Token**, send a **POST** request to the `token/<backend>/` endpoint with `client_id` and `code` to receive the token.
