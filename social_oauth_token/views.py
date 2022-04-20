@@ -11,7 +11,6 @@ from oauth2_provider.models import (
 )
 from oauth2_provider.settings import oauth2_settings
 from oauthlib import common
-from social_core.exceptions import AuthCanceled, MissingBackend
 from social_django.utils import load_backend, load_strategy
 
 Application = get_application_model()
