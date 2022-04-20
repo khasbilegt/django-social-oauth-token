@@ -41,7 +41,7 @@ def test_invalid_client_id(client_type, grant_type, client, user):
             reverse("social_oauth_token:token", kwargs={"backend": "apple-id"}),
             data={"client_id": client_id(client_type, grant_type), "code": "apple-id"},
         )
-        assert response.status_code == 403
+        assert response.status_code == 400
         assert "message" in response.json()
 
 
