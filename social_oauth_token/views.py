@@ -27,6 +27,7 @@ class AuthorizationView(View):
                 login(request, user)
                 request.session.set_expiry(0)  # expire when the Web browser is closed
                 return self.create_access_token(user, client_id)
+            return JsonResponse({"message": "Bad Request."}, status=400)
         except Exception as e:
             return JsonResponse({"message": str(e)}, status=400)
 
