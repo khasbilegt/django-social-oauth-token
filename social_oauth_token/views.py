@@ -11,7 +11,6 @@ from oauth2_provider.models import (
 )
 from oauth2_provider.settings import oauth2_settings
 from oauthlib import common
-from social_core.exceptions import AuthCanceled, MissingBackend
 from social_django.utils import load_backend, load_strategy
 
 Application = get_application_model()
@@ -27,50 +26,43 @@ class AuthorizationView(View):
                 login(request, user)
                 request.session.set_expiry(0)  # expire when the Web browser is closed
                 return self.create_access_token(user, client_id)
-        except MissingBackend:
-            pass
-        return JsonResponse({"message": "Bad Request"}, status=400)
+        except Exception as e:
+            return JsonResponse({"message": str(e)}, status=400)
 
     def get_user(self, request, backend_name: str):
-        try:
-            backend = load_backend(load_strategy(request), backend_name, None)
+        backend = load_backend(load_strategy(request), backend_name, None)
 
-            # Backend -c шалтгаалан authorizationCode -г баталгаажуулах процесс
-            # нь redirect хийхгүй учир state -г ашиглах шаардлагагүй
+        # Backend -c шалтгаалан authorizationCode -г баталгаажуулах процесс
+        # нь redirect хийхгүй учир state -г ашиглах шаардлагагүй
 
-            if getattr(backend, "STATE_PARAMETER", False):  # pragma: no cover
-                backend.STATE_PARAMETER = False
+        if getattr(backend, "STATE_PARAMETER", False):  # pragma: no cover
+            backend.STATE_PARAMETER = False
 
-            return backend.complete()
-        except AuthCanceled:
-            return None
+        return backend.complete()
 
     def create_access_token(self, user, client_id: str):
-        try:
-            application = Application.objects.get(
-                client_id=client_id,
-                client_type=Application.CLIENT_PUBLIC,
-            )
-            access_token = get_access_token_model().objects.create(
-                user=user,
-                expires=timezone.now() + timedelta(seconds=oauth2_settings.defaults["ACCESS_TOKEN_EXPIRE_SECONDS"]),
-                token=common.generate_token(),
-                application=application,
-            )
-            refresh_token = get_refresh_token_model().objects.create(
-                user=user,
-                token=common.generate_token(),
-                application=application,
-                access_token=access_token,
-            )
+        application = Application.objects.get(
+            client_id=client_id,
+            client_type=Application.CLIENT_PUBLIC,
+        )
+        access_token = get_access_token_model().objects.create(
+            user=user,
+            expires=timezone.now() + timedelta(seconds=oauth2_settings.defaults["ACCESS_TOKEN_EXPIRE_SECONDS"]),
+            token=common.generate_token(),
+            application=application,
+        )
+        refresh_token = get_refresh_token_model().objects.create(
+            user=user,
+            token=common.generate_token(),
+            application=application,
+            access_token=access_token,
+        )
 
-            return JsonResponse(
-                {
-                    "access_token": access_token.token,
-                    "expires_in": access_token.expires,
-                    "token_type": "Bearer",
-                    "refresh_token": refresh_token.token,
-                }
-            )
-        except Application.DoesNotExist as e:
-            return JsonResponse({"message": str(e)}, status=403)
+        return JsonResponse(
+            {
+                "access_token": access_token.token,
+                "expires_in": access_token.expires,
+                "token_type": "Bearer",
+                "refresh_token": refresh_token.token,
+            }
+        )
