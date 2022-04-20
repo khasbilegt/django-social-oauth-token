@@ -19,13 +19,15 @@ Application = get_application_model()
 class AuthorizationView(View):
     def post(self, request, backend, *args, **kwargs):
         try:
-            client_id = request.POST.get("client_id", None)
-            user = self.get_user(request, backend)
-
-            if backend and request.POST.get("code", None) and client_id and user:
+            if (
+                request.POST.get("code", None)
+                and (user := self.get_user(request, backend))
+                and (client_id := request.POST.get("client_id", None))
+            ):
                 login(request, user)
                 request.session.set_expiry(0)  # expire when the Web browser is closed
                 return self.create_access_token(user, client_id)
+            return JsonResponse({"message": "Bad Request."}, status=400)
         except Exception as e:
             return JsonResponse({"message": str(e)}, status=400)
 
