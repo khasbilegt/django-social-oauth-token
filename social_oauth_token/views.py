@@ -13,6 +13,7 @@ from oauth2_provider.settings import oauth2_settings
 from oauthlib import common
 from social_django.utils import load_backend, load_strategy
 
+ACCESS_TOKEN_EXPIRE_SECONDS = oauth2_settings.defaults["ACCESS_TOKEN_EXPIRE_SECONDS"]
 Application = get_application_model()
 
 
@@ -49,7 +50,7 @@ class AuthorizationView(View):
         )
         access_token = get_access_token_model().objects.create(
             user=user,
-            expires=timezone.now() + timedelta(seconds=oauth2_settings.defaults["ACCESS_TOKEN_EXPIRE_SECONDS"]),
+            expires=timezone.now() + timedelta(seconds=default_expires_in),
             token=common.generate_token(),
             application=application,
         )
@@ -63,7 +64,7 @@ class AuthorizationView(View):
         return JsonResponse(
             {
                 "access_token": access_token.token,
-                "expires_in": access_token.expires,
+                "expires_in": ACCESS_TOKEN_EXPIRE_SECONDS,
                 "token_type": "Bearer",
                 "refresh_token": refresh_token.token,
             }
