@@ -50,7 +50,7 @@ class AuthorizationView(View):
         )
         access_token = get_access_token_model().objects.create(
             user=user,
-            expires=timezone.now() + timedelta(seconds=default_expires_in),
+            expires=timezone.now() + timedelta(seconds=ACCESS_TOKEN_EXPIRE_SECONDS),
             token=common.generate_token(),
             application=application,
         )
