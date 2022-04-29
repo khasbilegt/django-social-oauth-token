@@ -13,18 +13,19 @@ from oauth2_provider.settings import oauth2_settings
 from oauthlib import common
 from social_django.utils import load_backend, load_strategy
 
-ACCESS_TOKEN_EXPIRE_SECONDS = oauth2_settings.defaults["ACCESS_TOKEN_EXPIRE_SECONDS"]
+EXPIRE_SECONDS = oauth2_settings.defaults["ACCESS_TOKEN_EXPIRE_SECONDS"]
 Application = get_application_model()
+AccessToken = get_access_token_model()
+RefreshToken = get_refresh_token_model()
 
 
-class AuthorizationView(View):
+class AuthCodeTokenExchangeView(View):
     def post(self, request, backend, *args, **kwargs):
         try:
-            if (
-                request.POST.get("code", None)
-                and (user := self.get_user(request, backend))
-                and (client_id := request.POST.get("client_id", None))
-            ):
+            user = self.get_user(request, backend)
+            client_id = request.POST.get("client_id", None)
+
+            if request.POST.get("code", None) and user and client_id:
                 login(request, user)
                 request.session.set_expiry(0)  # expire when the Web browser is closed
                 return self.create_access_token(user, client_id)
@@ -48,13 +49,13 @@ class AuthorizationView(View):
             client_id=client_id,
             client_type=Application.CLIENT_PUBLIC,
         )
-        access_token = get_access_token_model().objects.create(
+        access_token = AccessToken.objects.create(
             user=user,
-            expires=timezone.now() + timedelta(seconds=ACCESS_TOKEN_EXPIRE_SECONDS),
+            expires=timezone.now() + timedelta(seconds=EXPIRE_SECONDS),
             token=common.generate_token(),
             application=application,
         )
-        refresh_token = get_refresh_token_model().objects.create(
+        refresh_token = RefreshToken.objects.create(
             user=user,
             token=common.generate_token(),
             application=application,
@@ -64,7 +65,7 @@ class AuthorizationView(View):
         return JsonResponse(
             {
                 "access_token": access_token.token,
-                "expires_in": ACCESS_TOKEN_EXPIRE_SECONDS,
+                "expires_in": EXPIRE_SECONDS,
                 "token_type": "Bearer",
                 "refresh_token": refresh_token.token,
             }
