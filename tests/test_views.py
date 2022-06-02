@@ -74,7 +74,7 @@ def test_view(client, user):
         )
 
         assert res.status_code == 200
-        assert client.session.get_expire_at_browser_close()
+        assert len(client.session.items()) == 0
 
         token = res.json()
         for field in ("access_token", "expires_in", "token_type", "refresh_token"):

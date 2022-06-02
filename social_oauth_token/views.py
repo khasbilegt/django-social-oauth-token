@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from django.contrib.auth import login
+from django.core.exceptions import BadRequest
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.generic import View
@@ -21,15 +21,14 @@ RefreshToken = get_refresh_token_model()
 
 class AuthCodeTokenExchangeView(View):
     def post(self, request, backend, *args, **kwargs):
+        client_id = request.POST.get("client_id", None)
+
+        if not client_id:
+            raise BadRequest("Please provide client_id")
+
         try:
             user = self.get_user(request, backend)
-            client_id = request.POST.get("client_id", None)
-
-            if request.POST.get("code", None) and user and client_id:
-                login(request, user)
-                request.session.set_expiry(0)  # expire when the Web browser is closed
-                return self.create_access_token(user, client_id)
-            return JsonResponse({"message": "Bad Request."}, status=400)
+            return self.create_access_token(user, client_id)
         except Exception as e:
             return JsonResponse({"message": str(e)}, status=400)
 
