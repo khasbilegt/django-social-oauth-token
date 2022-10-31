@@ -1,10 +1,9 @@
 from django.urls import path
-from django.views.decorators.csrf import csrf_exempt
 
-from .views import AuthCodeTokenExchangeView
+from .views import social_auth_token_exchange_view
 
 app_name = "social_oauth_token"
 
 urlpatterns = [
-    path("token/<str:backend>/", csrf_exempt(AuthCodeTokenExchangeView.as_view()), name="token"),
+    path("token/<str:backend>/", social_auth_token_exchange_view, name="token"),
 ]
