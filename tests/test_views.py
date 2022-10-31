@@ -11,9 +11,7 @@ Application = get_application_model()
 
 @pytest.fixture
 def user():
-    user = get_user_model().objects.create(email="user@gmail.com")
-    user.backend = "social_core.backends.apple.AppleIdAuth"
-    return user
+    return get_user_model().objects.create(email="user@gmail.com")
 
 
 def client_id(client_type=Application.CLIENT_PUBLIC, grant_type=Application.GRANT_AUTHORIZATION_CODE):
@@ -32,17 +30,19 @@ def client_id(client_type=Application.CLIENT_PUBLIC, grant_type=Application.GRAN
         (Application.CLIENT_CONFIDENTIAL, Application.GRANT_CLIENT_CREDENTIALS),
     ),
 )
-def test_invalid_client_id(client_type, grant_type, client, user):
-    backend = mock.Mock()
-    backend.complete.return_value = user
+@pytest.mark.parametrize("data", [{"token": "access_token"}, {"code": "auth_code"}])
+def test_invalid_client_id(client_type, grant_type, client, user, data, monkeypatch):
+    monkeypatch.setattr(
+        "social_django.utils.load_backend",
+        mock.Mock(**{"return_value.complete.return_value": user, "return_value.do_auth.return_value": user}),
+    )
 
-    with mock.patch("social_oauth_token.views.load_backend", return_value=backend):
-        response = client.post(
-            reverse("social_oauth_token:token", kwargs={"backend": "apple-id"}),
-            data={"client_id": client_id(client_type, grant_type), "code": "apple-id"},
-        )
-        assert response.status_code == 400
-        assert "message" in response.json()
+    response = client.post(
+        reverse("social_oauth_token:token", kwargs={"backend": "apple-id"}),
+        data={**data, "client_id": client_id(client_type, grant_type)},
+    )
+    assert response.status_code == 400
+    assert "message" in response.json()
 
 
 @pytest.mark.parametrize(
@@ -50,57 +50,62 @@ def test_invalid_client_id(client_type, grant_type, client, user):
     (
         None,
         {"code": ""},
+        {"token": ""},
         {"client_id": ""},
         {"code": "", "client_id": ""},
+        {"token": "", "client_id": ""},
         {"code": "ldfjsk", "client_id": ""},
+        {"token": "ldfjsk", "client_id": ""},
         {"code": "", "client_id": "sldfkjldkfj"},
+        {"token": "", "client_id": "sldfkjldkfj"},
     ),
 )
 def test_invalid_request_body(data, client):
     assert (
-        client.post(reverse("social_oauth_token:token", kwargs={"backend": "sdfsdfasd"}), data=data).status_code == 400
+        client.post(reverse("social_oauth_token:token", kwargs={"backend": "apple-id"}), data=data).status_code == 400
     )
 
 
 @pytest.mark.django_db
-def test_view(client, user):
-    backend = mock.Mock()
-    backend.complete.return_value = user
+@pytest.mark.parametrize("data", [{"token": "access_token"}, {"code": "auth_code"}])
+def test_view(client, user, monkeypatch, data):
+    monkeypatch.setattr(
+        "social_django.utils.load_backend",
+        mock.Mock(**{"return_value.complete.return_value": user, "return_value.do_auth.return_value": user}),
+    )
 
-    with mock.patch("social_oauth_token.views.load_backend", return_value=backend):
-        res = client.post(
-            reverse("social_oauth_token:token", kwargs={"backend": "apple-id"}),
-            data={"code": "klsdfjlskdfj", "client_id": client_id()},
-        )
+    res = client.post(
+        reverse("social_oauth_token:token", kwargs={"backend": "apple-id"}), data={**data, "client_id": client_id()}
+    )
 
-        assert res.status_code == 200
-        assert len(client.session.items()) == 0
+    assert res.status_code == 200
+    assert len(client.session.items()) == 0
 
-        token = res.json()
-        for field in ("access_token", "expires_in", "token_type", "refresh_token"):
-            assert field in token
+    token = res.json()
+    for field in ("access_token", "expires_in", "token_type", "refresh_token"):
+        assert field in token
 
-        client.logout()
-        assert client.get(reverse("profile")).status_code == 302
-        assert (
-            client.get(
-                reverse("profile"),
-                HTTP_AUTHORIZATION=f"Bearer {token['access_token']}",
-            ).status_code
-            == 200
-        )
+    client.logout()
+    assert client.get(reverse("profile")).status_code == 302
+    assert client.get(reverse("profile"), HTTP_AUTHORIZATION=f"Bearer {token['access_token']}").status_code == 200
 
 
 @pytest.mark.django_db
-def test_view_auth_exception(client):
-    backend = mock.Mock(return_value=3)
-    backend.complete.side_effect = AuthCanceled(mock.Mock())
-
-    with mock.patch("social_oauth_token.views.load_backend", return_value=backend):
-        assert (
-            client.post(
-                reverse("social_oauth_token:token", kwargs={"backend": "apple-id"}),
-                data={"code": "klsdfjlskdfj", "client_id": client_id()},
-            ).status_code
-            == 400
-        )
+@pytest.mark.parametrize("data", [{"token": "access_token"}, {"code": "auth_code"}])
+def test_view_auth_exception(client, data, monkeypatch):
+    monkeypatch.setattr(
+        "social_django.utils.load_backend",
+        mock.Mock(
+            **{
+                "return_value.complete.side_effect": AuthCanceled("apple-id"),
+                "return_value.do_auth.side_effect": AuthCanceled("apple-id"),
+            }
+        ),
+    )
+    assert (
+        client.post(
+            reverse("social_oauth_token:token", kwargs={"backend": "apple-id"}),
+            data={**data, "client_id": client_id()},
+        ).status_code
+        == 400
+    )
