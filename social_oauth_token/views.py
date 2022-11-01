@@ -19,19 +19,19 @@ AccessToken = get_access_token_model()
 RefreshToken = get_refresh_token_model()
 
 
-def create_access_token(user, client_id: str):
+def create_access_token(user_id, client_id: str, expires: int = EXPIRE_SECONDS):
     application = Application.objects.get(
         client_id=client_id,
         client_type=Application.CLIENT_PUBLIC,
     )
     access_token = AccessToken.objects.create(
-        user=user,
-        expires=timezone.now() + timedelta(seconds=EXPIRE_SECONDS),
+        user_id=user_id,
+        expires=timezone.now() + timedelta(seconds=expires),
         token=common.generate_token(),
         application=application,
     )
     refresh_token = RefreshToken.objects.create(
-        user=user,
+        user_id=user_id,
         token=common.generate_token(),
         application=application,
         access_token=access_token,
@@ -40,7 +40,7 @@ def create_access_token(user, client_id: str):
     return JsonResponse(
         {
             "access_token": access_token.token,
-            "expires_in": EXPIRE_SECONDS,
+            "expires_in": expires,
             "token_type": "Bearer",
             "refresh_token": refresh_token.token,
         }
@@ -59,7 +59,7 @@ def social_auth_token_exchange_view(request, backend, *args, **kwargs):
                     request.backend.STATE_PARAMETER = False
 
                 user = request.backend.complete()
-            return create_access_token(user, client_id)
+            return create_access_token(user.pk, client_id)
         raise BadRequest("Please provide client_id")
     except Exception as e:
         return JsonResponse({"message": str(e)}, status=400)
