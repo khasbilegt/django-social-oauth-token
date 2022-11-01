@@ -37,7 +37,7 @@ precision = 2
 
 [tool.poetry]
 name = "django-social-oauth-token"
-version = "0.2.0"
+version = "2.2.0"
 description = "OAuth Token generation API for handling OAuth 2.0 Authentication Code Flow based on social-auth"
 authors = ["Khasbilegt.TS <khasbilegt.ts@gmail.com>"]
 license = "MIT"
